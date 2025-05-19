@@ -27,8 +27,22 @@ esac
 # Detect ARCH
 ARCH="$(uname -m)"
 case "$ARCH" in
-  x86_64|amd64) ARCH="x86_64" ;;
-  arm64|aarch64) ARCH="arm64" ;;
+  x86_64|amd64)
+    ARCH="x86_64"
+    ;;
+  arm64|aarch64)
+    ARCH="arm64"
+    ;;
+  s390x)
+    echo "Detected s390x—building kubectl-ai from source..."
+    if ! command -v go >/dev/null 2>&1; then
+      echo "Error: Go is required to build on s390x. Install Go 1.24.0+ and retry."
+      exit 1
+    fi
+    GOOS=linux GOARCH=s390x go install github.com/GoogleCloudPlatform/kubectl-ai/cmd/kubectl-ai@latest
+    echo "✅ kubectl-ai installed to $(go env GOPATH)/bin/kubectl-ai"
+    exit 0
+    ;;
   *)
     echo "If you are on an unsupported architecture, please follow the manual installation instructions at:"
     echo "https://github.com/GoogleCloudPlatform/kubectl-ai#manual-installation-linux-macos-and-windows"
