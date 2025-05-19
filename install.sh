@@ -40,7 +40,7 @@ case "$ARCH" in
       exit 1
     fi
     GOOS=linux GOARCH=s390x go install github.com/GoogleCloudPlatform/kubectl-ai/cmd/kubectl-ai@latest
-    echo "✅ kubectl-ai installed to $(go env GOPATH)/bin/kubectl-ai"
+    echo "✅ $BINARY installed successfully! Run '$BINARY --help' to get started."
     exit 0
     ;;
   *)
