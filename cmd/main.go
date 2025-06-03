@@ -52,7 +52,7 @@ func BuildRootCommand(opt *Options) (*cobra.Command, error) {
 	rootCmd := &cobra.Command{
 		Use:   "kubectl-ai",
 		Short: "A CLI tool to interact with Kubernetes using natural language",
-		Long:  "kubectl-ai is a command-line tool that allows you to interact with your Kubernetes cluster using natural language queries. It leverages large language models to understand your intent and translate it into kubectl",
+		Long:  "Kubernetes AI Command Canvas on s390x: Command-line tool that allows you to interact with your Kubernetes cluster using natural language queries. It leverages large language models to understand your intent and translate it into kubectl",
 		Args:  cobra.MaximumNArgs(1), // Only one positional arg is allowed.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return RunRootCommand(cmd.Context(), *opt, args)
