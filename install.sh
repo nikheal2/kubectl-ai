@@ -40,10 +40,10 @@ case "$ARCH" in
       exit 1
     fi
     git clone https://github.com/GoogleCloudPlatform/kubectl-ai .tmp
-    cd .tmp/kubectl-ai/cmd
+    cd .tmp/cmd
     go build -o kubectl-ai
     cp kubectl-ai /usr/bin
-    cd ../../../
+    cd ../../
     rm -rf .tmp
 #    GOOS=linux GOARCH=s390x go build github.com/GoogleCloudPlatform/kubectl-ai/cmd/kubectl-ai@latest
 #    echo "✅ $BINARY installed successfully! Run '$BINARY --help' to get started."
