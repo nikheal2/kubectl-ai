@@ -175,13 +175,14 @@ cat error.log | kubectl-ai "explain the error"
 
 You can also extend its capabilities by defining your own custom tools. By default, `kubectl-ai` looks for your tool configurations in `~/.config/kubectl-ai/tools.yaml`.
 
-To specify a different configuration file, use:
+To specify tools configuration files or directories containing tools configuration files, use:
 
 ```shell
 kubectl-ai --custom-tools-config=YOUR_CONFIG
 ```
 
-Define your custom tools using the following schema. You can include multiple tools in a single configuration file:
+You can include multiple tools in a single configuration file, or a directory with multiple configuration files, each dedicated to a single or multiple tools.
+Define your custom tools using the following schema:
 
 ```yaml
 - name: tool_name
@@ -189,6 +190,72 @@ Define your custom tools using the following schema. You can include multiple to
   command: "your_command" # For example: 'gcloud' or 'gcloud container clusters'
   command_desc: "Detailed information for the LLM, including command syntax and usage examples."
 ```
+
+A custom tool definition for `helm` could look like the following example:
+
+```yaml
+- name: helm
+  description: "Helm is the Kubernetes package manager and deployment tool. Use it to define, install, upgrade, and roll back applications packaged as Helm charts in a Kubernetes cluster."
+  command: "helm"
+  command_desc: |
+    Helm command-line interface, with the following core subcommands and usage patterns:    
+    - helm install <release-name> <chart> [flags]  
+      Install a chart into the cluster.      
+    - helm upgrade <release-name> <chart> [flags]  
+      Upgrade an existing release to a new chart version or configuration.      
+    - helm list [flags]  
+      List all releases in one or all namespaces.      
+    - helm uninstall <release-name> [flags]  
+      Uninstall a release and clean up associated resources.  
+    Use `helm --help` or `helm <subcommand> --help` to see full syntax, available flags, and examples for each command.
+```
+
+## MCP Client Mode
+
+`kubectl-ai` can connect to external [MCP](https://modelcontextprotocol.io/examples) Servers to access additional tools in addition to built-in tools.
+
+### Quick Start
+
+Enable MCP client mode:
+
+```bash
+kubectl-ai --mcp-client
+```
+
+### Configuration
+
+Create or edit `~/.config/kubectl-ai/mcp.yaml` to customize MCP servers:
+
+```yaml
+servers:
+  # Local MCP server (stdio-based)
+  # sequential-thinking: Advanced reasoning and step-by-step analysis
+  - name: sequential-thinking
+    command: npx
+    args:
+      - -y
+      - "@modelcontextprotocol/server-sequential-thinking"
+  
+  # Remote MCP server (HTTP-based)
+  - name: cloudflare-documentation
+    url: https://docs.mcp.cloudflare.com/mcp
+    
+  # Optional: Remote MCP server with authentication
+  - name: custom-api
+    url: https://api.example.com/mcp
+    auth:
+      type: "bearer"
+      token: "${MCP_TOKEN}"
+```
+
+The system automatically:
+- Converts parameter names (snake_case → camelCase)
+- Handles type conversion (strings → numbers/booleans when appropriate)
+- Provides fallback behavior for unknown servers
+
+No additional setup required - just use the `--mcp-client` flag and the AI will have access to all configured MCP tools.
+
+📖 **For detailed configuration options, troubleshooting, and advanced features for MCP Client mode, see the [MCP Client Documentation](pkg/mcp/README.md).**
 
 ## Extras
 
@@ -206,9 +273,19 @@ You can use the following special keywords for specific actions:
 
 You can also run `kubectl ai`. `kubectl` finds any executable file in your `PATH` whose name begins with `kubectl-` as a [plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/).
 
-## MCP server
+## MCP Server Mode
 
-You can also use `kubectl-ai` as a MCP server that exposes `kubectl` as one of the tools to interact with locally configured k8s environment. See [mcp docs](./docs/mcp.md) for more details.
+`kubectl-ai` can also act as an MCP server that exposes `kubectl` as a tool for other MCP clients (like Claude, Cursor, or VS Code) to interact with your locally configured Kubernetes environment. 
+
+Enable MCP server mode:
+
+```bash
+kubectl-ai --mcp-server
+```
+
+This allows AI agents and tools to execute kubectl commands in your environment through the Model Context Protocol.
+
+📖 **For details on configuring kubectl-ai as an MCP server for use with Claude, Cursor, VS Code, and other MCP clients, see the [MCP Server Documentation](./docs/mcp.md).**
 
 ## k8s-bench
 

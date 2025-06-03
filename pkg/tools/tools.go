@@ -90,6 +90,20 @@ type ToolCall struct {
 }
 
 func (t *ToolCall) PrettyPrint() string {
+	// Check if this is an MCP tool and format accordingly
+	if mcpTool, ok := t.tool.(*MCPTool); ok {
+		if command, ok := t.arguments["command"]; ok {
+			return fmt.Sprintf("[MCP: %s] %s", mcpTool.serverName, command.(string))
+		}
+		var args []string
+		for k, v := range t.arguments {
+			args = append(args, fmt.Sprintf("%s=%v", k, v))
+		}
+		sort.Strings(args)
+		return fmt.Sprintf("[MCP: %s] %s(%s)", mcpTool.serverName, t.name, strings.Join(args, ", "))
+	}
+
+	// Default formatting for non-MCP tools
 	if command, ok := t.arguments["command"]; ok {
 		return command.(string)
 	}
@@ -173,6 +187,17 @@ func (t *ToolCall) InvokeTool(ctx context.Context, opt InvokeToolOptions) (any, 
 
 // ToolResultToMap converts an arbitrary result to a map[string]any
 func ToolResultToMap(result any) (map[string]any, error) {
+	// Handle simple string results (common with MCP tools)
+	if str, ok := result.(string); ok {
+		return map[string]any{"content": str}, nil
+	}
+
+	// Handle nil results
+	if result == nil {
+		return map[string]any{"content": ""}, nil
+	}
+
+	// Try to convert to map via JSON for structured results
 	b, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("converting result to json: %w", err)
@@ -180,7 +205,8 @@ func ToolResultToMap(result any) (map[string]any, error) {
 
 	m := make(map[string]any)
 	if err := json.Unmarshal(b, &m); err != nil {
-		return nil, fmt.Errorf("converting json result to map: %w", err)
+		// If JSON unmarshal fails, wrap the original result
+		return map[string]any{"content": result}, nil
 	}
 	return m, nil
 }
@@ -188,13 +214,24 @@ func ToolResultToMap(result any) (map[string]any, error) {
 // LoadAndRegisterCustomTools loads tool configurations from a YAML file
 // and registers them.
 func LoadAndRegisterCustomTools(configPath string) error {
-	if configPath == "" {
-		// Default config path: ~/.config/kubectl-ai/tools.yaml
-		home, err := os.UserHomeDir()
+	pathInfo, err := os.Stat(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to describe config file %s: %w", configPath, err)
+	}
+
+	if pathInfo.IsDir() {
+		configPaths, err := os.ReadDir(configPath)
 		if err != nil {
-			return fmt.Errorf("failed to get user home directory for default custom tools config: %w", err)
+			return fmt.Errorf("failed to read config dir %s: %w", configPath, err)
 		}
-		configPath = filepath.Join(home, ".config", "kubectl-ai", "tools.yaml")
+
+		for _, entry := range configPaths {
+			if err := LoadAndRegisterCustomTools(filepath.Join(configPath, entry.Name())); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
 	yamlFile, err := os.ReadFile(configPath)
@@ -231,4 +268,15 @@ func LoadAndRegisterCustomTools(configPath string) error {
 	}
 
 	return nil
+}
+
+// For CustomTool
+func (t *CustomTool) IsInteractive(args map[string]any) (bool, error) {
+	// Custom tools are not interactive by default
+	return false, nil
+}
+
+// Add a method to access the tool
+func (t *ToolCall) GetTool() Tool {
+	return t.tool
 }
