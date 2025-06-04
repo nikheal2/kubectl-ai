@@ -24,7 +24,7 @@ jobs:
       - name: Create & push a temporary tag
         if: startsWith(github.ref, 'refs/heads/build_publish')
         run: |
-          TAG="v0.0.0-build_publish-$(git rev-parse --short HEAD)"
+          TAG="v0.0.0-build-publish-$(git rev-parse --short HEAD)"
           echo "Creating tag $TAG"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
