@@ -1,5 +1,13 @@
 package tools
 
+import (
+	"context"
+	"os"
+	"os/exec"
+
+	"github.com/GoogleCloudPlatform/kubectl-ai/gollm"
+)
+
 // import (
 // 	"context"
 // 	"fmt"
@@ -51,4 +59,89 @@ Examples:
 - To list installed operators (ClusterServiceVersions): oc get csv
 - To check operator versions: oc get csv
 - To check operator install/upgrade status: oc get csv`
+}
+
+func (t *OcClient) FunctionDefinition() *gollm.FunctionDefinition {
+	return &gollm.FunctionDefinition{
+		Name:        t.Name(),
+		Description: t.Description(),
+		Parameters: &gollm.Schema{
+			Type: gollm.TypeObject,
+			Properties: map[string]*gollm.Schema{
+				"command": {
+					Type: gollm.TypeString,
+					Description: `The complete oc command to execute. Prefer to use heredoc syntax for multi-line commands. Please include the oc prefix as well.
+
+IMPORTANT: Do not use interactive commands. Instead:
+- Use 'oc get -o yaml', 'oc patch', or 'oc apply' instead of 'oc edit'
+- Use 'oc exec' with specific commands instead of 'oc exec -it'
+- Use service types like NodePort or LoadBalancer instead of 'oc port-forward'
+
+Examples:
+user: what pods are running in the cluster?
+assistant: oc get pods
+
+user: what is the status of the pod my-pod?
+assistant: oc get pod my-pod -o jsonpath='{.status.phase}'
+
+user: I need to edit the pod configuration
+assistant: # Option 1: Using patch for targeted changes
+oc patch pod my-pod --patch '{"spec":{"containers":[{"name":"main","image":"new-image"}]}}'
+
+# Option 2: Using get and apply for full changes
+oc get pod my-pod -o yaml > pod.yaml
+# Edit pod.yaml locally
+oc apply -f pod.yaml
+
+user: I need to execute a command in the pod
+assistant: oc exec my-pod -- /bin/sh -c "your command here"`,
+				},
+				"modifies_resource": {
+					Type: gollm.TypeString,
+					Description: `Whether the command modifies a kubernetes resource.
+Possible values:
+- "yes" if the command modifies a resource
+- "no" if the command does not modify a resource
+- "unknown" if the command's effect on the resource is unknown
+`,
+				},
+			},
+		},
+	}
+}
+
+func (t *OcClient) Run(ctx context.Context, args map[string]any) (any, error) {
+	kubeconfig := ctx.Value(KubeconfigKey).(string)
+	workDir := ctx.Value(WorkDirKey).(string)
+
+	commandVal, ok := args["command"]
+	if !ok || commandVal == nil {
+		return &ExecResult{Error: "oc command not provided or is nil"}, nil
+	}
+
+	command, ok := commandVal.(string)
+	if !ok {
+		return &ExecResult{Error: "oc command must be a string"}, nil
+	}
+
+	return runOcCommand(ctx, command, workDir, kubeconfig)
+}
+
+func runOcCommand(ctx context.Context, command, workDir, kubeconfig string) (*ExecResult, error) {
+	if isInteractive, err := IsInteractiveOcCommand(command); isInteractive {
+		return &ExecResult{Error: err.Error()}, nil
+	}
+
+	var cmd *exec.Cmd = exec.CommandContext(ctx, lookupBashBin(), "-c", command)
+	cmd.Env = os.Environ()
+	cmd.Dir = workDir
+	if kubeconfig != "" {
+		kubeconfig, err := expandShellVar(kubeconfig)
+		if err != nil {
+			return nil, err
+		}
+		cmd.Env = append(cmd.Env, "KUBECONFIG="+kubeconfig)
+	}
+
+	return executeCommand(cmd)
 }
