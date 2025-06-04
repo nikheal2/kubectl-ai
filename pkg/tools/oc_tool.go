@@ -4,7 +4,8 @@ import (
 	"context"
 	"os"
 	"os/exec"
-
+        "fmt"
+	
 	"github.com/GoogleCloudPlatform/kubectl-ai/gollm"
 )
 
