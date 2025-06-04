@@ -4,18 +4,10 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/kubectl-ai/gollm"
 )
-
-// import (
-// 	"context"
-// 	"fmt"
-// 	"os"
-// 	"os/exec"
-
-// 	"github.com/GoogleCloudPlatform/kubectl-ai/gollm"
-// )
 
 func init() {
 	RegisterTool(&OcClient{})
