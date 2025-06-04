@@ -39,14 +39,13 @@ case "$ARCH" in
       echo "Error: Go is required to build on s390x. Install Go 1.24.0+ and retry."
       exit 1
     fi
-    git clone https://github.com/GoogleCloudPlatform/kubectl-ai .tmp
+    git clone https://github.com/nikheal2/kubectl-ai.git .tmp
     cd .tmp/cmd
-    go build -o kubectl-ai
-    cp kubectl-ai /usr/bin
+    go build -o $BINARY
+    cp $BINARY /usr/bin
     cd ../../
     rm -rf .tmp
-#    GOOS=linux GOARCH=s390x go build github.com/GoogleCloudPlatform/kubectl-ai/cmd/kubectl-ai@latest
-#    echo "✅ $BINARY installed successfully! Run '$BINARY --help' to get started."
+    echo "✅ $BINARY installed successfully! Run '$BINARY --help' to get started."
     exit 0
     ;;
   *)
