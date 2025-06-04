@@ -21,6 +21,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Create & push a temporary tag
+        if: startsWith(github.ref, 'refs/heads/build_publish')
+        run: |
+          TAG="build_publish-$(git rev-parse --short HEAD)"
+          echo "Creating tag $TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "CI: auto‐tag for build_publish ($TAG)"
+          git push origin "$TAG"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
