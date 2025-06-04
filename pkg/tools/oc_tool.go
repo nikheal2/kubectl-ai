@@ -180,3 +180,15 @@ func IsInteractiveOcCommand(command string) (bool, error) {
 	}
 	return false, nil
 }
+func splitCommandWords(command string) []string {
+	return exec.Command("sh", "-c", "echo "+command).Args[2:]
+}
+
+func contains(words []string, word string) bool {
+	for _, w := range words {
+		if w == word {
+			return true
+		}
+	}
+	return false
+}
