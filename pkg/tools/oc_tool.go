@@ -145,3 +145,38 @@ func runOcCommand(ctx context.Context, command, workDir, kubeconfig string) (*Ex
 
 	return executeCommand(cmd)
 }
+
+func (t *OcClient) IsInteractive(args map[string]any) (bool, error) {
+	commandVal, ok := args["command"]
+	if !ok || commandVal == nil {
+		return false, nil
+	}
+
+	command, ok := commandVal.(string)
+	if !ok {
+		return false, nil
+	}
+
+	return IsInteractiveOcCommand(command)
+}
+
+// IsInteractiveOcCommand checks for interactive oc commands
+func IsInteractiveOcCommand(command string) (bool, error) {
+	words := splitCommandWords(command)
+	if len(words) == 0 {
+		return false, nil
+	}
+	base := words[0]
+	if base != "oc" {
+		return false, nil
+	}
+
+	isExec := containsAll(words, []string{"exec", "-it"})
+	isPortForward := contains(words, "port-forward")
+	isEdit := contains(words, "edit")
+
+	if isExec || isPortForward || isEdit {
+		return true, fmt.Errorf("interactive mode not supported for oc, please use non-interactive commands")
+	}
+	return false, nil
+}
