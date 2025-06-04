@@ -192,3 +192,21 @@ func contains(words []string, word string) bool {
 	}
 	return false
 }
+
+func containsAll(words []string, targets []string) bool {
+	found := make(map[string]bool)
+	for _, t := range targets {
+		found[t] = false
+	}
+	for _, w := range words {
+		if _, ok := found[w]; ok {
+			found[w] = true
+		}
+	}
+	for _, v := range found {
+		if !v {
+			return false
+		}
+	}
+	return true
+}
