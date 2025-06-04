@@ -37,15 +37,6 @@ tar -zxvf kubectl-ai_Darwin_arm64.tar.gz
 chmod a+x kubectl-ai
 sudo mv kubectl-ai /usr/local/bin/
 ```
-3. For s390x architecture build binary manually as shown below.
-
-```shell
-git clone https://github.com/GoogleCloudPlatform/kubectl-ai
-cd kubectl-ai/cmd
-go build -o kubectl-ai .
-chmod a+x kubectl-ai
-sudo mv kubectl-ai /usr/local/bin/
-```
 
 #### Install with Krew (Linux/macOS/Windows)
 First of all, you need to have krew insatlled, refer to [krew document](https://krew.sigs.k8s.io/docs/user-guide/setup/install/) for more details
