@@ -9,7 +9,7 @@ for cmd in curl tar; do
   fi
 done
 
-REPO="GoogleCloudPlatform/kubectl-ai"
+REPO="nikheal2/kubectl-ai"
 BINARY="kubectl-ai"
 
 # Detect OS
@@ -27,32 +27,15 @@ esac
 # Detect ARCH
 ARCH="$(uname -m)"
 case "$ARCH" in
-  x86_64|amd64)
-    ARCH="x86_64"
-    ;;
-  arm64|aarch64)
-    ARCH="arm64"
-    ;;
-  s390x)
-    echo "Detected s390x—building kubectl-ai from source..."
-    if ! command -v go >/dev/null 2>&1; then
-      echo "Error: Go is required to build on s390x. Install Go 1.24.0+ and retry."
-      exit 1
-    fi
-    git clone https://github.com/nikheal2/kubectl-ai.git .tmp
-    cd .tmp/cmd
-    go build -o $BINARY
-    cp $BINARY /usr/bin
-    cd ../../
-    rm -rf .tmp
-    echo "✅ $BINARY installed successfully! Run '$BINARY --help' to get started."
-    exit 0
-    ;;
+  x86_64|amd64) ARCH="x86_64" ;;
+  arm64|aarch64) ARCH="arm64" ;;
+  s390x) ARCH="s390x ;;
   *)
     echo "If you are on an unsupported architecture, please follow the manual installation instructions at:"
     echo "https://github.com/GoogleCloudPlatform/kubectl-ai#manual-installation-linux-macos-and-windows"
     exit 1
     ;;
+esac
 esac
 
 # Get latest version tag from GitHub API, Use GITHUB_TOKEN if available to avoid potential rate limit
