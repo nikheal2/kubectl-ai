@@ -19,7 +19,7 @@ First, ensure that kubectl is installed and configured.
 #### Quick Install (Linux & MacOS only)
 
 ```shell
-curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/nikheal2/kubectl-ai/refs/heads/main/install.sh | bash
 ```
 
 <details>
