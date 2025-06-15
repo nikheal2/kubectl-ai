@@ -64,6 +64,9 @@ kubectl-ai --model gemini-2.5-pro-exp-03-25
 
 # Use 2.5 flash (faster) model
 kubectl-ai --quiet --model gemini-2.5-flash-preview-04-17 "check logs for nginx app in hello namespace"
+
+# Use --oc flag to use oc (Openshift CLI) for all commands
+kubectl-ai --oc --model gemini-2.5-pro-exp-03-25
 ```
 
 <details>
@@ -90,6 +93,28 @@ kubectl-ai --llm-provider ollama --model gemma3:12b-it-qat --enable-tool-use-shi
 
 # you can use `models` command to discover the locally available models
 >> models
+```
+
+#### Using AI models running locally (Using VLLM)
+You can use `kubectl-ai` with AI models running locally. `kubectl-ai` supports VLLM library to deploy the AI models locally.
+
+```shell
+podman run \
+  -v ~/.cache/huggingface:/root/.cache/huggingface \
+  -e HUGGING_FACE_HUB_TOKEN=<HUGGING_FACE_TOKEN> \
+  -e VLLM_CPU_KVCACHE_SPACE=2 \
+  -p 8000:8000 \
+  --memory=32g \
+  --ipc=host \
+  <VLLM_CONTAINER_IMAGE> \
+  --model ibm-granite/granite-3b-code-instruct-2k \
+  --max-model-len 2048 \
+  --dtype=float \
+  --download-dir /root/.cache/huggingface \
+  --enable-auto-tool-choice \
+  --tool-call-parser=granite
+
+kubectl-ai --llm-provider vllm --model ibm-granite/granite-3b-code-instruct-2k
 ```
 
 #### Using Grok
