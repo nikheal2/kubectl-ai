@@ -29,13 +29,12 @@ ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64|amd64) ARCH="x86_64" ;;
   arm64|aarch64) ARCH="arm64" ;;
-  s390x) ARCH="s390x ;;
+  s390x) ARCH="s390x" ;;
   *)
     echo "If you are on an unsupported architecture, please follow the manual installation instructions at:"
     echo "https://github.com/GoogleCloudPlatform/kubectl-ai#manual-installation-linux-macos-and-windows"
     exit 1
     ;;
-esac
 esac
 
 # Get latest version tag from GitHub API, Use GITHUB_TOKEN if available to avoid potential rate limit
