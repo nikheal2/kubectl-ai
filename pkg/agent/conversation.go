@@ -69,6 +69,8 @@ type Conversation struct {
 	llmChat gollm.Chat
 
 	workDir string
+
+	ForceOc bool
 }
 
 func (s *Conversation) Init(ctx context.Context, doc *ui.Document) error {
@@ -231,10 +233,34 @@ func (a *Conversation) RunOneRound(ctx context.Context, query string) error {
 		// Be careful with shared state and UI updates if running in parallel.
 
 		for _, call := range functionCalls {
+			//toolCall, err := a.Tools.ParseToolInvocation(ctx, call.Name, call.Arguments)
+			//if err != nil {
+			//	return fmt.Errorf("building tool call: %w", err)
+			//}
 			toolCall, err := a.Tools.ParseToolInvocation(ctx, call.Name, call.Arguments)
-			if err != nil {
-				return fmt.Errorf("building tool call: %w", err)
+            if err != nil {
+                return fmt.Errorf("building tool call: %w", err)
+            }
+            // If --oc is set, always force use of the oc tool
+			if a.ForceOc {
+				// Force both "kubectl" and "oc" tool calls to use the OC tool.
+				if call.Name == "kubectl" || call.Name == "oc" {
+					ocTool := a.Tools.Lookup("oc")
+					if ocTool == nil {
+						return fmt.Errorf("OC tool is not registered")
+					}
+					// Copy arguments, replacing leading 'kubectl' with 'oc' if needed
+					args := make(map[string]any)
+					for k, v := range call.Arguments {
+						args[k] = v
+					}
+					if cmd, ok := args["command"].(string); ok && strings.HasPrefix(cmd, "kubectl ") {
+						args["command"] = "oc " + strings.TrimPrefix(cmd, "kubectl ")
+					}
+					toolCall = tools.NewToolCall(ocTool, "oc", args)
+				}
 			}
+			
 
 			// Check if the command is interactive using the tool's implementation
 			isInteractive, err := toolCall.GetTool().IsInteractive(call.Arguments)
