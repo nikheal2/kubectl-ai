@@ -280,3 +280,12 @@ func (t *CustomTool) IsInteractive(args map[string]any) (bool, error) {
 func (t *ToolCall) GetTool() Tool {
 	return t.tool
 }
+
+// NewToolCall creates a ToolCall (for use in other packages)
+func NewToolCall(tool Tool, name string, arguments map[string]any) *ToolCall {
+	return &ToolCall{
+		tool:      tool,
+		name:      name,
+		arguments: arguments,
+	}
+}

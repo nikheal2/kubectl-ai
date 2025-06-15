@@ -107,6 +107,8 @@ type Options struct {
 
 	// SkipVerifySSL is a flag to skip verifying the SSL certificate of the LLM provider.
 	SkipVerifySSL bool `json:"skipVerifySSL,omitempty"`
+	// UseOc is a flag to indicate if the OpenShift client should be used.
+	UseOc      bool   `json:"useOc,omitempty"`
 }
 
 type UserInterface string
@@ -163,6 +165,7 @@ func (o *Options) InitDefaults() {
 	o.ExtraPromptPaths = []string{}
 	o.TracePath = filepath.Join(os.TempDir(), "kubectl-ai-trace.txt")
 	o.RemoveWorkDir = false
+	o.UseOc = false
 	o.ToolConfigPaths = defaultToolConfigPaths
 	// Default to terminal UI
 	o.UserInterface = UserInterfaceTerminal
@@ -298,6 +301,7 @@ func (opt *Options) bindCLIFlags(f *pflag.FlagSet) error {
 	f.Var(&opt.UserInterface, "user-interface", "user interface mode to use. Supported values: terminal, html.")
 	f.StringVar(&opt.UIListenAddress, "ui-listen-address", opt.UIListenAddress, "address to listen for the HTML UI.")
 	f.BoolVar(&opt.SkipVerifySSL, "skip-verify-ssl", opt.SkipVerifySSL, "skip verifying the SSL certificate of the LLM provider")
+	f.BoolVar(&opt.UseOc, "oc", opt.UseOc, "Use oc (OpenShift CLI) for all commands")
 
 	return nil
 }
@@ -309,6 +313,10 @@ func RunRootCommand(ctx context.Context, opt Options, args []string) error {
 	if err = resolveKubeConfigPath(&opt); err != nil {
 		return fmt.Errorf("failed to resolve kubeconfig path: %w", err)
 	}
+
+	if opt.UseOc {
+		fmt.Fprintln(os.Stderr, "Using OpenShift CLI (oc) for all commands.")
+	}	
 
 	if opt.MCPServer {
 		if err = startMCPServer(ctx, opt); err != nil {
@@ -424,6 +432,7 @@ func RunRootCommand(ctx context.Context, opt Options, args []string) error {
 		SkipPermissions:    opt.SkipPermissions,
 		EnableToolUseShim:  opt.EnableToolUseShim,
 		MCPClientEnabled:   opt.MCPClient,
+		ForceOc:            opt.UseOc,
 	}
 
 	err = conversation.Init(ctx, doc)
