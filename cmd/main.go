@@ -89,11 +89,15 @@ type Options struct {
 	EnableToolUseShim bool `json:"enableToolUseShim,omitempty"`
 	// Quiet flag indicates if the agent should run in non-interactive mode.
 	// It requires a query to be provided as a positional argument.
-	Quiet                  bool     `json:"quiet,omitempty"`
-	MCPServer              bool     `json:"mcpServer,omitempty"`
-	MCPClient              bool     `json:"mcpClient,omitempty"`
-	MaxIterations          int      `json:"maxIterations,omitempty"`
-	KubeConfigPath         string   `json:"kubeConfigPath,omitempty"`
+	Quiet         bool `json:"quiet,omitempty"`
+	MCPServer     bool `json:"mcpServer,omitempty"`
+	MCPClient     bool `json:"mcpClient,omitempty"`
+	MaxIterations int  `json:"maxIterations,omitempty"`
+
+	// KubeConfigPath is the path to the kubeconfig file.
+	// If not provided, the default kubeconfig path will be used.
+	KubeConfigPath string `json:"kubeConfigPath,omitempty"`
+
 	PromptTemplateFilePath string   `json:"promptTemplateFilePath,omitempty"`
 	ExtraPromptPaths       []string `json:"extraPromptPaths,omitempty"`
 	TracePath              string   `json:"tracePath,omitempty"`
@@ -149,7 +153,7 @@ var defaultConfigPaths = []string{
 
 func (o *Options) InitDefaults() {
 	o.ProviderID = "gemini"
-	o.ModelID = "gemini-2.5-pro-preview-03-25"
+	o.ModelID = "gemini-2.5-pro-preview-06-05"
 	// by default, confirm before executing kubectl commands that modify resources in the cluster.
 	o.SkipPermissions = false
 	o.MCPServer = false
@@ -536,6 +540,7 @@ func (s *session) repl(ctx context.Context, initialQuery string, initialBlocks [
 	for {
 		if query == "" {
 			input := ui.NewInputTextBlock()
+			input.SetEditable(true)
 			s.doc.AddBlock(input)
 
 			userInput, err := input.Observable().Wait()
@@ -719,6 +724,15 @@ func resolveKubeConfigPath(opt *Options) error {
 			return fmt.Errorf("failed to get user home directory: %w", err)
 		}
 		opt.KubeConfigPath = filepath.Join(home, ".kube", "config")
+	}
+
+	// We resolve the kubeconfig path to an absolute path, so we can run kubectl from any working directory.
+	if opt.KubeConfigPath != "" {
+		p, err := filepath.Abs(opt.KubeConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path for kubeconfig file %q: %w", opt.KubeConfigPath, err)
+		}
+		opt.KubeConfigPath = p
 	}
 
 	return nil

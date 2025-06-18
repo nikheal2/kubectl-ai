@@ -160,7 +160,7 @@ func runEvals(ctx context.Context) error {
 	llmProvider := "gemini"
 	modelList := ""
 	defaultKubeConfig := "~/.kube/config"
-	enableToolUseShim := true
+	enableToolUseShim := false
 	quiet := true
 
 	flag.StringVar(&config.TasksDir, "tasks-dir", config.TasksDir, "Directory containing evaluation tasks")
@@ -186,7 +186,7 @@ func runEvals(ctx context.Context) error {
 	config.KubeConfig = expandedKubeconfig
 
 	defaultModels := map[string][]string{
-		"gemini": {"gemini-2.5-pro-preview-03-25"},
+		"gemini": {"gemini-2.5-pro-preview-06-05"},
 	}
 
 	models := defaultModels

@@ -132,6 +132,7 @@ func (t *Tools) ParseToolInvocation(ctx context.Context, name string, arguments 
 type InvokeToolOptions struct {
 	WorkDir string
 
+	// Kubeconfig is the path to the kubeconfig file.
 	Kubeconfig string
 }
 
@@ -182,7 +183,7 @@ func (t *ToolCall) InvokeTool(ctx context.Context, opt InvokeToolOptions) (any, 
 		})
 	}
 
-	return response, nil
+	return response, err
 }
 
 // ToolResultToMap converts an arbitrary result to a map[string]any

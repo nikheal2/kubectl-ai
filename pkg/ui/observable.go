@@ -75,6 +75,13 @@ func (o *Observable[T]) Set(t T, err error) {
 	o.sendChangeHoldingLock()
 }
 
+func (o *Observable[T]) Get() (T, error) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
+	return o.value, o.err
+}
+
 func (o *Observable[T]) sendChangeHoldingLock() {
 	for i, s := range o.subscriptions {
 		if s == nil {

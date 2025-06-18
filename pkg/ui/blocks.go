@@ -139,6 +139,9 @@ type InputTextBlock struct {
 
 	// text is populated when we have input from the user
 	text Observable[string]
+
+	// editable is true if the input text block is editable
+	editable bool
 }
 
 func NewInputTextBlock() *InputTextBlock {
@@ -155,6 +158,20 @@ func (b *InputTextBlock) Document() *Document {
 
 func (b *InputTextBlock) Observable() *Observable[string] {
 	return &b.text
+}
+
+func (b *InputTextBlock) SetEditable(editable bool) *InputTextBlock {
+	b.editable = editable
+	b.doc.blockChanged(b)
+	return b
+}
+
+func (b *InputTextBlock) Editable() bool {
+	return b.editable
+}
+
+func (b *InputTextBlock) Text() (string, error) {
+	return b.text.Get()
 }
 
 // InputOptionBlock is used to prompt for a selection from multiple choices

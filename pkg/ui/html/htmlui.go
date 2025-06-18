@@ -138,6 +138,7 @@ func (u *HTMLUserInterface) handlePOSTSendMessage(w http.ResponseWriter, req *ht
 	}
 
 	inputBlock.Observable().Set(q, nil)
+	inputBlock.SetEditable(false)
 
 	var bb bytes.Buffer
 	bb.WriteString("ok")

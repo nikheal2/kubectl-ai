@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SRC_DIR=${REPO_ROOT}
+cd "${SRC_DIR}"
+
+# Pick a probably-unique tag
+export TAG=`date +%Y%m%d%H%M%S`
+
+if [[ -z "${KUBE_CONTEXT:-}" ]]; then
+  KUBE_CONTEXT=kind-kind
+  echo "Defaulting to kube context: ${KUBE_CONTEXT}"
+fi
+
+if [[ -z "${NAMESPACE:-}" ]]; then
+  NAMESPACE=kubectl-ai
+  echo "Defaulting to namespace: ${NAMESPACE}"
+fi
+
+# Build the image
+echo "Building images"
+export IMAGE_PREFIX=fake.registry/
+BUILDX_ARGS=--load dev/tasks/build-images
+
+KUBECTL_AI_IMAGE="${IMAGE_PREFIX:-}kubectl-ai:${TAG}"
+
+# Load the image into kind
+echo "Loading images into kind: ${KUBECTL_AI_IMAGE}"
+kind load docker-image ${KUBECTL_AI_IMAGE}
+
+# Create the namespace if it doesn't exist
+echo "Creating namespace: ${NAMESPACE}"
+kubectl create namespace ${NAMESPACE} --context=${KUBE_CONTEXT} --dry-run=client -oyaml | kubectl apply --context=${KUBE_CONTEXT} --server-side -f -
+
+# Create the secret if it doesn't exist,
+# including the GEMINI_API_KEY environment variable if set.
+# (This is for kind, on a GKE cluster, we probably want to use Workload Identity instead)
+echo "Creating secret: kubectl-ai"
+cat <<EOF | kubectl apply --context=${KUBE_CONTEXT} --namespace=${NAMESPACE} --server-side -f -
+kind: Secret
+apiVersion: v1
+metadata:
+  name: kubectl-ai
+  labels:
+    app: kubectl-ai
+type: Opaque
+stringData:
+  GEMINI_API_KEY: ${GEMINI_API_KEY}
+EOF
+
+
+# Create a role binding so kubectl can "see" the current cluster
+# Again, this makes sense for kind but we will probably have a different approach for GKE
+echo "Creating cluster role binding as view"
+cat <<EOF | kubectl apply --context=${KUBE_CONTEXT} --namespace=${NAMESPACE} --server-side -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ${NAMESPACE}:kubectl-ai:view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: kubectl-ai
+  namespace: ${NAMESPACE}
+EOF
+
+# Deploy manifests
+echo "Deploying manifests"
+cat k8s/kubectl-ai.yaml | sed s@kubectl-ai:latest@${KUBECTL_AI_IMAGE}@g | \
+  kubectl apply --context=${KUBE_CONTEXT} --namespace=${NAMESPACE} --server-side -f -
